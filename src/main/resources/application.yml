@@ -1,0 +1,8 @@
+logging:
+  includePaths:
+    - /api/**
+
+jwt:
+  secret: aS1hbS1hLW5pY2UtYW5kLXNlY3VyZS1zZWNyZXQta2V5LWZvci1qd3QtYXV0aGVudGljYXRpb24tYW5kLWktYW0tYXQtbGVhc3QtMjU2LWJpdHMtbG9uZw==
+  access-token-expiration: 900000 # 15 minutes
+  refresh-token-expiration: 604800000 # 7 days

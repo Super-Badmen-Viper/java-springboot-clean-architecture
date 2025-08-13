@@ -1,0 +1,94 @@
+package com.simple.bootstrap.log.aop;
+
+import cn.hutool.core.text.AntPathMatcher;
+import cn.hutool.json.JSONUtil;
+
+import com.simple.bootstrap.log.properties.LoggingProperties;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import lombok.extern.slf4j.Slf4j;
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.multipart.support.MultipartFilter;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Aspect
+@Component
+public class WhiteListLogAspect {
+
+    @Autowired
+    private LoggingProperties loggingProperties;
+
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
+    @Before("execution(* com.simple.api.controller..*(..))")
+    public void doBefore(JoinPoint joinPoint) {
+        HttpServletRequest request =
+                ((ServletRequestAttributes) Objects.requireNonNull(
+                        RequestContextHolder.getRequestAttributes()
+                )).getRequest();
+        String requestURI = request.getRequestURI();
+        if (shouldLog(requestURI)) {
+            addLog(joinPoint,"",0);
+        }
+    }
+
+    public void addLog(JoinPoint joinPoint, String outParams, long time) {
+        HttpServletRequest request = ((ServletRequestAttributes)
+                Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest();
+        log.info("""
+                        
+                        \r=======================================
+                        \r\
+                        请求地址:{}
+                        \r\
+                        请求方式:{}
+                        \r\
+                        请求类方法:{}
+                        \r\
+                        请求方法参数:{}
+                        \r\
+                        返回报文:{}
+                        \r\
+                        处理耗时:{} ms\s
+                        \r\
+                        =======================================
+                        \r""",
+                request.getRequestURI(),
+                request.getMethod(),
+                joinPoint.getSignature(),
+                JSONUtil.toJsonStr(filterArgs(joinPoint.getArgs())),
+                outParams,
+                time
+        );
+    }
+
+    private List<Object> filterArgs(Object[] args) {
+        return Arrays.stream(args)
+                .filter(object -> !(object instanceof MultipartFilter)
+                        && !(object instanceof HttpServletRequest)
+                        && !(object instanceof HttpServletResponse)
+                )
+                .collect(Collectors.toList());
+    }
+
+    private boolean shouldLog(String requestURI) {
+        return loggingProperties.
+                getIncludePaths().
+                stream().
+                anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
+    }
+}
