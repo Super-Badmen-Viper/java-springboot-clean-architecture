@@ -25,17 +25,20 @@ public class UserService implements UserUseCase {
     @Override
     public User singUp(UserDto userDto) {
         User user = new User();
+        String userId = userDto.getUserId();
+        if (userId.isEmpty()) {
+            userId = UUID.randomUUID().toString();
+        }
+        user.setUserId(userId);
         user.setUserName(userDto.getUserName());
-
         String encryptedPassword = passwordEncoder.encode(userDto.getPassword());
         user.setPassword(encryptedPassword);
-
         user.setEmail(userDto.getEmail());
         return userRepository.save(user);
     }
 
     @Override
-    public User getUserById(UUID userId) {
+    public User getUserById(String userId) {
         return userRepository.findById(userId).orElseThrow(() ->
                 new IllegalArgumentException("User with id " + userId + " not found.")
         );
@@ -65,7 +68,7 @@ public class UserService implements UserUseCase {
     }
 
     @Override
-    public void deleteUserById(UUID userId) {
+    public void deleteUserById(String userId) {
         userRepository.deleteById(userId);
     }
 }

@@ -1,13 +1,16 @@
 package com.simple.domain.auth.model;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.util.UUID;
-
-@Data
+@Getter
+@Setter
 public class User {
-    private UUID userId;
+    private String userId;
     private String userName;
     private String password;
     private String email;
+    private String role;
+    private java.util.Date createTime;
+    private java.util.Date updateTime;
 }

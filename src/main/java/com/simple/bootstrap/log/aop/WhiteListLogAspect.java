@@ -10,18 +10,17 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.multipart.support.MultipartFilter;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -34,17 +33,31 @@ public class WhiteListLogAspect {
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    @Before("execution(* com.simple.api.controller..*(..))")
-    public void doBefore(JoinPoint joinPoint) {
-        HttpServletRequest request =
-                ((ServletRequestAttributes) Objects.requireNonNull(
-                        RequestContextHolder.getRequestAttributes()
-                )).getRequest();
+    @Around("execution(public * com.simple.api.controller..*.*(..))")
+    public Object doAround(ProceedingJoinPoint joinPoint) throws Throwable {
+        HttpServletRequest request = ((ServletRequestAttributes)
+                Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest();
+
         String requestURI = request.getRequestURI();
-        if (shouldLog(requestURI)) {
-            addLog(joinPoint,"",0);
+        if (!shouldLog(requestURI)) {
+            return joinPoint.proceed();
+        }
+
+        long startTime = System.currentTimeMillis();
+        Object result = null;
+        try {
+            result = joinPoint.proceed();
+            return result;
+        } finally {
+            long endTime = System.currentTimeMillis();
+            addLog(joinPoint,
+                    JSONUtil.toJsonStr(result),
+                    endTime - startTime
+            );
         }
     }
+
 
     public void addLog(JoinPoint joinPoint, String outParams, long time) {
         HttpServletRequest request = ((ServletRequestAttributes)
@@ -78,17 +91,20 @@ public class WhiteListLogAspect {
 
     private List<Object> filterArgs(Object[] args) {
         return Arrays.stream(args)
-                .filter(object -> !(object instanceof MultipartFilter)
-                        && !(object instanceof HttpServletRequest)
-                        && !(object instanceof HttpServletResponse)
-                )
+                .filter(arg -> !isExcludedType(arg))
                 .collect(Collectors.toList());
     }
 
+    private boolean isExcludedType(Object obj) {
+        return obj instanceof HttpServletRequest
+                || obj instanceof HttpServletResponse
+                || obj instanceof MultipartFile;
+    }
+
     private boolean shouldLog(String requestURI) {
-        return loggingProperties.
-                getIncludePaths().
-                stream().
-                anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
+        List<String> paths = Optional.ofNullable(loggingProperties.getIncludePaths())
+                .orElse(Collections.emptyList());
+        return paths.stream()
+                .anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
     }
 }

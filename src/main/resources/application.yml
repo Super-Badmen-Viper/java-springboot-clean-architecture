@@ -1,8 +1,28 @@
-logging:
-  includePaths:
-    - /api/**
+spring:
+  application:
+    name: springboot_simple
+  sql:
+    init:
+      mode: never
+  datasource:
+    url: jdbc:mysql://localhost:3306/springboot_simple?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: ENC(Jasypt(k1/gAUn5yB8p2Jphd3sLgA==))
+    password: ENC(Jasypt(k1/gAUn5yB8p2Jphd3sLgA==))
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis-plus:
+  type-handlers-package: com.simple.bootstrap.db
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.simple.domain.auth.entity
+  global-config:
+    db-config:
+      id-type: auto
 
 jwt:
   secret: aS1hbS1hLW5pY2UtYW5kLXNlY3VyZS1zZWNyZXQta2V5LWZvci1qd3QtYXV0aGVudGljYXRpb24tYW5kLWktYW0tYXQtbGVhc3QtMjU2LWJpdHMtbG9uZw==
   access-token-expiration: 900000 # 15 minutes
   refresh-token-expiration: 604800000 # 7 days
+
+logging:
+  include-paths:
+    - /api/auth/**

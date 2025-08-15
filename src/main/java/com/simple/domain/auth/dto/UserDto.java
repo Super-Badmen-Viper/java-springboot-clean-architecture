@@ -5,11 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
-import java.util.UUID;
-
 @Data
 public class UserDto {
-    private UUID userId;
+    private String userId;
 
     @NotBlank(message = "用户名不能为空")
     private String userName;

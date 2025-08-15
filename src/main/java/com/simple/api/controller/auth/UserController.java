@@ -14,8 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -54,7 +52,7 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public ResponseMessage<User>
-    proFile(@PathVariable UUID userId){
+    proFile(@PathVariable String userId){
         User userNew = userUseCase.getUserById(userId);
         return ResponseMessage.success(userNew);
     }
@@ -68,7 +66,7 @@ public class UserController {
 
     @DeleteMapping("/{userId}")
     public ResponseMessage<User>
-    delete(@PathVariable UUID userId){
+    delete(@PathVariable String userId){
         userUseCase.deleteUserById(userId);
         return ResponseMessage.success();
     }
